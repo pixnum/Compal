@@ -95,7 +95,17 @@ function updateCompass(alpha){
 
 // Mobile orientation
 function handleMobileOrientation(event){
-    let alpha = event.alpha || 0;
+    let alpha;
+    // iOS
+    if(event.webkitCompassHeading !== undefined){
+        alpha = event.webkitCompassHeading;
+    } 
+    // Android & others
+    else if(event.alpha !== null){
+        alpha = 360 - event.alpha; // Correct inversion
+    } else {
+        alpha = 0;
+    }
     updateCompass(alpha);
 }
 
