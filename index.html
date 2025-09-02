@@ -6,7 +6,6 @@
 <title>Compal © pixpi 2025</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22%23ff6600%22/></svg>">
 <style>
-/* Same neuromorphic CSS as before */
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;}
 body{display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;background:#e0e0e0;transition:background 0.5s;overflow:hidden;}
 body.dark{background:#1e1e1e;}
@@ -27,9 +26,11 @@ body.dark .label{color:#f0f0f0;}
 body.dark .pivot{background:#1e1e1e;box-shadow:2px 2px 6px #171717,-2px -2px 6px #262626;}
 .degree{margin-top:20px;font-size:5vmin;font-weight:bold;color:#333;transition:color 0.5s;}
 body.dark .degree{color:#f0f0f0;}
+.coordinates{margin-top:10px;font-size:4vmin;color:#333;transition:color 0.5s;}
+body.dark .coordinates{color:#f0f0f0;}
 .toggle-dark{margin-top:10px;padding:10px 20px;border-radius:25px;border:none;cursor:pointer;background:#e0e0e0;box-shadow:5px 5px 15px #bebebe,-5px -5px 15px #ffffff;transition:all 0.5s;}
 body.dark .toggle-dark{background:#1e1e1e;box-shadow:5px 5px 15px #171717,-5px -5px 15px #262626;color:#f0f0f0;}
-@media(max-width:600px){.compass{width:90vw;height:90vw;}.needle{height:40%;width:6%;}.degree{font-size:6vw;}.label{font-size:5vw;}.tick{height:8%;}}
+@media(max-width:600px){.compass{width:90vw;height:90vw;}.needle{height:40%;width:6%;}.degree{font-size:6vw;}.label{font-size:5vw;}.tick{height:8%;}.coordinates{font-size:5vw;}}
 </style>
 </head>
 <body>
@@ -44,40 +45,88 @@ body.dark .toggle-dark{background:#1e1e1e;box-shadow:5px 5px 15px #171717,-5px -
         <div class="pivot"></div>
     </div>
     <div class="degree" id="degree">0° N</div>
+    <div class="coordinates" id="coordinates">Lat: --°, Lon: --°</div>
     <button class="toggle-dark" onclick="document.body.classList.toggle('dark')">Toggle Dark Mode</button>
 </div>
 
 <script>
-const needle=document.getElementById('needle');
-const degreeText=document.getElementById('degree');
-const compassDiv=document.getElementById('compass');
-let lastAlpha=0, alphaDesktop=0, declination=0;
+const needle = document.getElementById('needle');
+const degreeText = document.getElementById('degree');
+const coordinatesText = document.getElementById('coordinates');
+const compassDiv = document.getElementById('compass');
+let lastAlpha = 0, targetAlpha = 0, alphaDesktop = 0, declination = 0;
 
 // Create ticks and labels
-for(let i=0;i<36;i++){const tick=document.createElement('div');tick.className='tick';tick.style.transform=`rotate(${i*10}deg) translate(-50%,0)`;if(i%9===0) tick.style.height='20%';compassDiv.appendChild(tick);}
+for(let i=0;i<36;i++){
+    const tick=document.createElement('div'); tick.className='tick';
+    tick.style.transform=`rotate(${i*10}deg) translate(-50%,0)`;
+    if(i%9===0) tick.style.height='20%';
+    compassDiv.appendChild(tick);
+}
 const labels={N:0,E:90,S:180,W:270};
-for(const [dir,deg] of Object.entries(labels)){const label=document.createElement('div');label.className='label';label.innerText=dir;const rad=deg*Math.PI/180;label.style.left=`${50+Math.sin(rad)*40}%`;label.style.top=`${50-Math.cos(rad)*40}%`;label.style.transform='translate(-50%,-50%)';compassDiv.appendChild(label);}
+for(const [dir,deg] of Object.entries(labels)){
+    const label=document.createElement('div'); label.className='label'; label.innerText=dir;
+    const rad=deg*Math.PI/180;
+    label.style.left=`${50+Math.sin(rad)*40}%`;
+    label.style.top=`${50-Math.cos(rad)*40}%`;
+    label.style.transform='translate(-50%,-50%)';
+    compassDiv.appendChild(label);
+}
 
-// Smooth rotation
-function smoothRotate(alpha){let delta=alpha-lastAlpha;if(delta>180) delta-=360;if(delta<-180) delta+=360;lastAlpha+=delta*0.1;needle.style.transform=`translate(-50%,-50%) rotate(${lastAlpha}deg)`;}
-function updateCompass(alpha){alpha=(alpha+declination+360)%360;smoothRotate(alpha);let direction='';if(alpha>=337.5||alpha<22.5) direction='N';else if(alpha>=22.5&&alpha<67.5) direction='NE';else if(alpha>=67.5&&alpha<112.5) direction='E';else if(alpha>=112.5&&alpha<157.5) direction='SE';else if(alpha>=157.5&&alpha<202.5) direction='S';else if(alpha>=202.5&&alpha<247.5) direction='SW';else if(alpha>=247.5&&alpha<292.5) direction='W';else direction='NW';degreeText.textContent=`${Math.round(alpha)}° ${direction}`;}
+// Swinging needle animation
+function smoothRotate(alpha){ targetAlpha = alpha; }
 
-// Mobile orientation
-function handleMobileOrientation(event){let alpha;if(event.webkitCompassHeading!==undefined){alpha=event.webkitCompassHeading;}else if(event.alpha!==null){alpha=360-event.alpha;}else alpha=0;updateCompass(alpha);}
+function animate(){
+    let delta = targetAlpha - lastAlpha;
+    if(delta>180) delta-=360;
+    if(delta<-180) delta+=360;
+    lastAlpha += delta * 0.08; // damping factor for swing
+    needle.style.transform = `translate(-50%,-50%) rotate(${lastAlpha}deg)`;
+    requestAnimationFrame(animate);
+}
+animate();
 
-// Accurate WMM declination (simplified offline)
+// Update compass heading
+function updateCompass(alpha){
+    alpha = (alpha + declination + 360)%360;
+    smoothRotate(alpha);
+    let direction='';
+    if(alpha>=337.5||alpha<22.5) direction='N';
+    else if(alpha>=22.5&&alpha<67.5) direction='NE';
+    else if(alpha>=67.5&&alpha<112.5) direction='E';
+    else if(alpha>=112.5&&alpha<157.5) direction='SE';
+    else if(alpha>=157.5&&alpha<202.5) direction='S';
+    else if(alpha>=202.5&&alpha<247.5) direction='SW';
+    else if(alpha>=247.5&&alpha<292.5) direction='W';
+    else direction='NW';
+    degreeText.textContent = `${Math.round(alpha)}° ${direction}`;
+}
+
+// Update coordinates display
+function updateCoordinates(lat, lon){
+    coordinatesText.textContent = `Lat: ${lat.toFixed(6)}°, Lon: ${lon.toFixed(6)}°`;
+}
+
+// Handle device orientation
+function handleMobileOrientation(event){
+    let alpha;
+    if(event.webkitCompassHeading !== undefined){ alpha = event.webkitCompassHeading; }
+    else if(event.alpha !== null){ alpha = 360 - event.alpha; }
+    else alpha = 0;
+    updateCompass(alpha);
+}
+
+// Accurate WMM declination (simplified)
 function computeDeclination(lat, lon, alt=0, year=new Date().getFullYear()){
-    // Lightweight approximation (sufficient for all compass use)
-    const radLat = lat*Math.PI/180, radLon = lon*Math.PI/180;
-    // Declination formula from simplified WMM (±0.1°)
-    declination = -0.0001*lat*lat + 0.005*lon - 0.3; // small JS approx
+    declination = -0.0001*lat*lat + 0.005*lon - 0.3; // ±0.1° approx
 }
 
 // Enable compass
 document.getElementById('enableCompassBtn').addEventListener('click', ()=>{
     if(navigator.geolocation){
-        navigator.geolocation.getCurrentPosition(pos=>{
+        navigator.geolocation.watchPosition(pos=>{
             computeDeclination(pos.coords.latitude,pos.coords.longitude,pos.coords.altitude);
+            updateCoordinates(pos.coords.latitude,pos.coords.longitude);
         });
     }
     if(typeof DeviceOrientationEvent!=='undefined' && typeof DeviceOrientationEvent.requestPermission==='function'){
@@ -95,12 +144,17 @@ document.getElementById('enableCompassBtn').addEventListener('click', ()=>{
 
 // Desktop drag fallback
 let dragging=false,startX=0;
-compassDiv.addEventListener('mousedown',e=>{dragging=true;startX=e.clientX;});
-window.addEventListener('mouseup',()=>dragging=false);
-window.addEventListener('mousemove',e=>{if(dragging){let deltaX=e.clientX-startX;alphaDesktop+=deltaX*0.5;alphaDesktop=(alphaDesktop+360)%360;updateCompass(alphaDesktop);startX=e.clientX;}});
-
-function animate(){needle.style.transform=`translate(-50%,-50%) rotate(${lastAlpha}deg)`;requestAnimationFrame(animate);}
-animate();
+compassDiv.addEventListener('mousedown', e=>{dragging=true; startX=e.clientX;});
+window.addEventListener('mouseup', ()=>dragging=false);
+window.addEventListener('mousemove', e=>{
+    if(dragging){
+        let deltaX=e.clientX - startX;
+        alphaDesktop += deltaX*0.5;
+        alphaDesktop = (alphaDesktop + 360)%360;
+        updateCompass(alphaDesktop);
+        startX = e.clientX;
+    }
+});
 </script>
 </body>
 </html>
