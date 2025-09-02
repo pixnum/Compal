@@ -7,7 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22%23ff6600%22/></svg>">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;}
-body{display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;background:#e0e0e0;transition:background 0.5s;overflow:hidden;}
+body{display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:100vh;background:#e0e0e0;transition:background 0.5s;overflow:hidden;}
 body.dark{background:#1e1e1e;}
 #overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:#e0e0e0;display:flex;justify-content:center;align-items:center;z-index:1000;transition:background 0.5s;}
 body.dark #overlay{background:#1e1e1e;}
@@ -26,11 +26,13 @@ body.dark .label{color:#f0f0f0;}
 body.dark .pivot{background:#1e1e1e;box-shadow:2px 2px 6px #171717,-2px -2px 6px #262626;}
 .degree{margin-top:20px;font-size:5vmin;font-weight:bold;color:#333;transition:color 0.5s;}
 body.dark .degree{color:#f0f0f0;}
-.coordinates{margin-top:10px;font-size:4vmin;color:#333;transition:color 0.5s;}
+.coordinates{margin-top:5px;font-size:3vmin;color:#333;text-align:center;word-wrap:break-word;max-width:60%;transition:color 0.5s;}
 body.dark .coordinates{color:#f0f0f0;}
 .toggle-dark{margin-top:10px;padding:10px 20px;border-radius:25px;border:none;cursor:pointer;background:#e0e0e0;box-shadow:5px 5px 15px #bebebe,-5px -5px 15px #ffffff;transition:all 0.5s;}
 body.dark .toggle-dark{background:#1e1e1e;box-shadow:5px 5px 15px #171717,-5px -5px 15px #262626;color:#f0f0f0;}
-@media(max-width:600px){.compass{width:90vw;height:90vw;}.needle{height:40%;width:6%;}.degree{font-size:6vw;}.label{font-size:5vw;}.tick{height:8%;}.coordinates{font-size:5vw;}}
+.footer{margin-top:20px;font-size:3vmin;color:#333;text-align:center;user-select:none;transition:color 0.5s;}
+body.dark .footer{color:#f0f0f0;}
+@media(max-width:600px){.compass{width:90vw;height:90vw;}.needle{height:40%;width:6%;}.degree{font-size:6vw;}.label{font-size:5vw;}.tick{height:8%;}.coordinates{font-size:4vw;max-width:80%;}.footer{font-size:4vw;}}
 </style>
 </head>
 <body>
@@ -48,6 +50,8 @@ body.dark .toggle-dark{background:#1e1e1e;box-shadow:5px 5px 15px #171717,-5px -
     <div class="coordinates" id="coordinates">Lat: --°, Lon: --°</div>
     <button class="toggle-dark" onclick="document.body.classList.toggle('dark')">Toggle Dark Mode</button>
 </div>
+
+<div class="footer">© Compal 2025</div>
 
 <script>
 const needle = document.getElementById('needle');
@@ -104,7 +108,7 @@ function updateCompass(alpha){
 
 // Update coordinates display
 function updateCoordinates(lat, lon){
-    coordinatesText.textContent = `Lat: ${lat.toFixed(6)}°, Lon: ${lon.toFixed(6)}°`;
+    coordinatesText.textContent = `Lat: ${lat.toFixed(4)}°, Lon: ${lon.toFixed(4)}°`;
 }
 
 // Handle device orientation
